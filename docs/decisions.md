@@ -1,4 +1,0 @@
-# Decisions
-
-| Decision | Why |
-| --- | --- |
