@@ -36,4 +36,15 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN?.trim() || '1h';
 const API_USERNAME = readRequired('API_USERNAME');
 const API_PASSWORD = readRequired('API_PASSWORD');
 
-export { PORT, DATABASE_PATH, JWT_SECRET, JWT_EXPIRES_IN, API_USERNAME, API_PASSWORD };
+// One frozen object for the layers that receive settings through their constructor
+// (services and middlewares never import env.js directly).
+const config = Object.freeze({
+  port: PORT,
+  databasePath: DATABASE_PATH,
+  jwtSecret: JWT_SECRET,
+  jwtExpiresIn: JWT_EXPIRES_IN,
+  apiUsername: API_USERNAME,
+  apiPassword: API_PASSWORD,
+});
+
+export { PORT, DATABASE_PATH, JWT_SECRET, JWT_EXPIRES_IN, API_USERNAME, API_PASSWORD, config };
