@@ -15,6 +15,24 @@ Base path `/api/v1`. JSON only. Camel-case fields. Everything except the public 
 | PUT | `/api/v1/projects/{id}` | yes | 200 | full replacement |
 | DELETE | `/api/v1/projects/{id}` | yes | 204, no body | delete |
 
+## POST /api/v1/auth/login (public)
+
+Request body (Zod strict, unknown fields → 400):
+
+```json
+{ "username": "admin", "password": "<value from server/.env>" }
+```
+
+```json
+// 200
+{ "token": "<jwt>", "tokenType": "Bearer", "expiresIn": "1h" }
+```
+
+- Token: HS256, claims `{ sub: <username>, iat, exp }`, lifetime `JWT_EXPIRES_IN`. Send it as `Authorization: Bearer <token>`.
+- 400 `VALIDATION_ERROR` (missing/empty field, unknown field, body not sent as JSON) · 400 `INVALID_JSON` (malformed JSON).
+- 401 `INVALID_CREDENTIALS` — identical response for a wrong username and a wrong password.
+- 401 on protected routes: `MISSING_TOKEN` / `INVALID_TOKEN` / `TOKEN_EXPIRED`, always with `WWW-Authenticate: Bearer`.
+
 ## Project object
 
 ```json
