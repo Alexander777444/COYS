@@ -4,11 +4,17 @@ node_modules/
 # Build output
 dist/
 
-# Environment files
+# Environment files (keep the example so a fresh clone knows what to set)
 .env
+.env.*
+!.env.example
+
+# Generated SQLite database files
+database/data/
 
 # OS files
 .DS_Store
+Thumbs.db
 
 # Logs
 logs/

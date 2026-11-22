@@ -21,7 +21,7 @@ Sunday is tight for two interfaces: do M6a first (≈1–2 h), then admin, then 
 
 | Module | Spec | Status | Branch |
 |---|---|---|---|
-| M0 Foundation | `docs/specs/M0-foundation.md` | ⬜ | `feat/m0-foundation` |
+| M0 Foundation | `docs/specs/M0-foundation.md` | 🔎 | `feat/m0-foundation` |
 | M1 Auth | `docs/specs/M1-auth.md` | ⬜ | `feat/m1-auth` |
 | M2 Projects read | `docs/specs/M2-projects-read.md` | ⬜ | `feat/m2-projects-read` |
 | M3 Projects write | `docs/specs/M3-projects-write.md` | ⬜ | `feat/m3-projects-write` |
@@ -42,4 +42,4 @@ Legend: ⬜ todo · 🟡 in progress · 🔎 waiting developer review · ✅ mer
 
 ## Ideas (out of scope — do not build)
 
-(agents append here)
+- Clean up `PROJECT-CONTEXT.md`: translate it to English and align it with the fixed stack.
