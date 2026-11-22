@@ -1,5 +1,5 @@
 /*
- * Design tokens for COYS (both interfaces). Source: LaunchDarkly style from styles.refero.design.
+ * Design tokens for COYS (both interfaces).
  * Colors, spacing and radii keep the names of the original variables.css.
  * Fixes vs the original: valid hex for the canvas, clamp() instead of invalid "80-120px" ranges,
  * real self-hosted fonts instead of placeholder names, glow tokens, danger color, responsive type.
