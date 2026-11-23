@@ -91,47 +91,107 @@ Credentials come from `server/.env` and are passed with `--env-var` at run time.
 stored in the collection: `api-tests/environments/local.bru` only holds placeholders, and `{{token}}`
 is captured by `00-login.bru` at run time.
 
+> **Copy-paste warning.** Never type `<from .env>` or `<signed -1s>` literally: those are descriptions,
+> not values. The block below computes every value from `server/.env`. A literal placeholder makes
+> `00-login` return `401 INVALID_CREDENTIALS`, and every protected case then cascades to
+> `401 INVALID_TOKEN`.
+
+Run the setup from the repository root, then keep two terminals: **A** for the server, **B** for the tests.
+
 ```powershell
-# 0. Read the credentials without printing them
+# 0. Setup once per shell - credentials and an expired token, neither printed.
 $creds = @{}
 Get-Content server/.env | ForEach-Object { if ($_ -match '^([A-Z_]+)=(.*)$') { $creds[$matches[1]] = $matches[2] } }
+if (-not ($creds.Keys -contains 'API_USERNAME' -and $creds.Keys -contains 'API_PASSWORD')) {
+  throw 'API_USERNAME / API_PASSWORD are missing in server/.env'
+}
 
-# 1. main pass — 5 seed rows
-#    stop the server if it is running
-cd server; npm run db:reset; npm start          # terminal A
-cd api-tests
-npx @usebruno/cli run main --env local `
-  --env-var "username=$($creds['API_USERNAME'])" `
-  --env-var "password=$($creds['API_PASSWORD'])" `
-  --env-var "expiredToken=<token signed with expiresIn: -1s>"
+Push-Location server
+$expired = node --input-type=module -e "import jwt from 'jsonwebtoken'; import { config } from './src/config/env.js'; process.stdout.write(jwt.sign({ sub: config.apiUsername }, config.jwtSecret, { algorithm: 'HS256', expiresIn: '-1s' }));"
+Pop-Location
 
-# 2. edge pass — the same database plus the edge seeds
-cd server; npm run db:seed:edge
-cd api-tests
-npx @usebruno/cli run edge --env local --env-var "username=$($creds['API_USERNAME'])" --env-var "password=$($creds['API_PASSWORD'])"
-
-# 3. server-error pass — the projects table is dropped
-#    stop the server
-cd server; npm run db:break; npm start          # terminal A
-cd api-tests
-npx @usebruno/cli run server-error --env local --env-var "username=$($creds['API_USERNAME'])" --env-var "password=$($creds['API_PASSWORD'])"
-
-# 4. empty-state pass — schema without seed data
-#    stop the server
-cd server; npm run db:reset -- --empty; npm start   # terminal A
-cd api-tests
-npx @usebruno/cli run empty-state --env local --env-var "username=$($creds['API_USERNAME'])" --env-var "password=$($creds['API_PASSWORD'])"
-
-# 5. leave the workspace clean
-#    stop the server
-cd server; npm run db:reset
+function Invoke-Suite([string]$folder) {
+  Push-Location api-tests
+  npx @usebruno/cli run $folder --env local `
+    --env-var "username=$($creds['API_USERNAME'])" `
+    --env-var "password=$($creds['API_PASSWORD'])" `
+    --env-var "expiredToken=$expired"
+  Pop-Location
+}
 ```
 
-The expired token is generated without printing it:
+### Step 1 — main pass
+
+**Terminal A** (server; the `cd` is needed only the first time):
 
 ```powershell
-$expired = node --input-type=module -e "import jwt from 'jsonwebtoken'; import { config } from './src/config/env.js'; process.stdout.write(jwt.sign({ sub: config.apiUsername }, config.jwtSecret, { algorithm: 'HS256', expiresIn: '-1s' }));"
+cd server
+npm run db:reset
+npm start
 ```
+
+**Terminal B** (repository root):
+
+```powershell
+Invoke-Suite main      # first line must be: main\00-login (200 OK)
+```
+
+### Step 2 — edge pass
+
+**Terminal A:** `Ctrl+C`, then:
+
+```powershell
+npm run db:seed:edge
+npm start
+```
+
+**Terminal B:**
+
+```powershell
+Invoke-Suite edge
+```
+
+### Step 3 — server-error pass
+
+**Terminal A:** `Ctrl+C`, then:
+
+```powershell
+npm run db:break
+npm start
+```
+
+**Terminal B:**
+
+```powershell
+Invoke-Suite server-error
+```
+
+### Step 4 — empty-state pass
+
+**Terminal A:** `Ctrl+C`, then:
+
+```powershell
+npm run db:reset -- --empty
+npm start
+```
+
+**Terminal B:**
+
+```powershell
+Invoke-Suite empty-state
+```
+
+### Step 5 — clean up
+
+**Terminal A:** `Ctrl+C`, then:
+
+```powershell
+npm run db:reset
+```
+
+**Stop at the first request.** If `main\00-login` is not `200 OK`, the credentials are wrong (usually a
+literal placeholder) and the rest of the run is meaningless: a failed login leaves `{{token}}` unresolved,
+so every protected case answers `401 INVALID_TOKEN`.
 
 `npx` downloads the Bruno CLI into the npm cache; it is **not** a dependency of `server/package.json`.
 

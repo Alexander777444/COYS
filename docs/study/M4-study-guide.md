@@ -92,6 +92,9 @@ Check order is asserted, not assumed: a request without a token never reaches bo
 ## 6. Verification evidence
 
 Two complete passes, each starting from `npm run db:reset`. Same commands, same order, same numbers.
+The exact commands live in `docs/qa/test-plan.md` → **Run order**: copy the block, never the `<...>`
+descriptions. The first line of a healthy run is `main\00-login (200 OK)`; if it is 401, the credentials
+were placeholders and every protected case cascades to `401 INVALID_TOKEN`.
 
 | Folder | Requests | Assertions | Pass 1 | Pass 2 |
 |---|---|---|---|---|
