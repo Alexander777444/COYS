@@ -15,6 +15,8 @@ Base path `/api/v1`. JSON only. Camel-case fields. Everything except the public 
 | PUT | `/api/v1/projects/{id}` | yes | 200 | full replacement |
 | DELETE | `/api/v1/projects/{id}` | yes | 204, no body | delete |
 
+`Location` on 201 is relative to the API root: `/api/v1/projects/{id}`.
+
 ## POST /api/v1/auth/login (public)
 
 Request body (Zod strict, unknown fields → 400):
