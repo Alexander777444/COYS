@@ -1,0 +1,6 @@
+{
+  "version": "1",
+  "name": "COYS API contract suite",
+  "type": "collection",
+  "ignore": ["node_modules", ".git"]
+}

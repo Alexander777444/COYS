@@ -1,0 +1,30 @@
+meta {
+  name: POST-400-04 body has an unknown field
+  type: http
+  seq: 27
+}
+
+post {
+  url: {{baseUrl}}/api/v1/projects
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "Unknown Field",
+    "slug": "qa-unknown-field",
+    "description": "The body carries a field that is not in the schema.",
+    "role": "admin"
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.error.code: eq VALIDATION_ERROR
+  res.body.error.details[0].message: contains Unrecognized key
+}

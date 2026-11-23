@@ -1,0 +1,36 @@
+meta {
+  name: PUT-500-01 replace with the projects table dropped
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/api/v1/projects/00000000-0000-4000-8000-000000000001
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "Broken Database",
+    "slug": "qa-broken-database",
+    "description": "The body is valid; the table is missing."
+  }
+}
+
+script:post-response {
+  test("no SQL is leaked", function () {
+    expect(JSON.stringify(res.body)).to.not.contain("no such table");
+  });
+}
+
+assert {
+  res.status: eq 500
+  res.body.error.code: eq INTERNAL_ERROR
+  res.body.error.message: eq Unexpected server error
+  res.body.error.details: isNull
+}

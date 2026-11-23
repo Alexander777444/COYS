@@ -1,0 +1,21 @@
+meta {
+  name: LIST-400-04 offset is negative
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects?offset=-1
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 400
+  res.body.error.code: eq VALIDATION_ERROR
+  res.body.error.details[0].path: eq offset
+}

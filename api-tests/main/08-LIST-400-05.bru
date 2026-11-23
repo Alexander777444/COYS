@@ -1,0 +1,21 @@
+meta {
+  name: LIST-400-05 status is not one of the allowed values
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects?status=XYZ
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 400
+  res.body.error.code: eq VALIDATION_ERROR
+  res.body.error.details[0].path: eq status
+}

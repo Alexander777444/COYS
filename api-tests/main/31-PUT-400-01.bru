@@ -1,0 +1,28 @@
+meta {
+  name: PUT-400-01 replacement body is invalid
+  type: http
+  seq: 34
+}
+
+put {
+  url: {{baseUrl}}/api/v1/projects/{{putId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "slug": "qa-put-target",
+    "description": "The title is missing."
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.error.code: eq VALIDATION_ERROR
+  res.body.error.details[0].path: eq title
+}

@@ -1,0 +1,24 @@
+meta {
+  name: PUT-401-01 replace without a token
+  type: http
+  seq: 35
+}
+
+put {
+  url: {{baseUrl}}/api/v1/projects/{{putId}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "title": "No Token",
+    "slug": "qa-put-target",
+    "description": "This body is valid but the request has no token."
+  }
+}
+
+assert {
+  res.status: eq 401
+  res.body.error.code: eq MISSING_TOKEN
+}

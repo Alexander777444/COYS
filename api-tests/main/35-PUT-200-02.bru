@@ -1,0 +1,29 @@
+meta {
+  name: PUT-200-02 replace a project and keep its own slug
+  type: http
+  seq: 38
+}
+
+put {
+  url: {{baseUrl}}/api/v1/projects/{{defaultsId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "QA Defaults Replaced",
+    "slug": "qa-defaults",
+    "description": "The project keeps its own slug, so this must be 200, not 409."
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.slug: eq qa-defaults
+  res.body.title: eq QA Defaults Replaced
+}

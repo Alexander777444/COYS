@@ -1,0 +1,28 @@
+meta {
+  name: LIST-500-01 list with the projects table dropped
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+script:post-response {
+  test("no SQL is leaked", function () {
+    expect(JSON.stringify(res.body)).to.not.contain("no such table");
+  });
+}
+
+assert {
+  res.status: eq 500
+  res.body.error.code: eq INTERNAL_ERROR
+  res.body.error.message: eq Unexpected server error
+  res.body.error.details: isNull
+}

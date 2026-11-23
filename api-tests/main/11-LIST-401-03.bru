@@ -1,0 +1,20 @@
+meta {
+  name: LIST-401-03 list with an expired token
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{expiredToken}}
+}
+
+assert {
+  res.status: eq 401
+  res.body.error.code: eq TOKEN_EXPIRED
+}

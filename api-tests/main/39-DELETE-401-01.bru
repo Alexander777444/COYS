@@ -1,0 +1,16 @@
+meta {
+  name: DELETE-401-01 delete without a token
+  type: http
+  seq: 42
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/projects/{{deleteId}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 401
+  res.body.error.code: eq MISSING_TOKEN
+}

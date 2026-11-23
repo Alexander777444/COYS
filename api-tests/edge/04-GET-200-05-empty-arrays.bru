@@ -1,0 +1,24 @@
+meta {
+  name: GET-200-05 edge seed with empty arrays and null optionals
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects/00000000-0000-4000-8000-000000000104
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.slug: eq empty-technologies
+  res.body.technologies: isEmpty
+  res.body.clientName: isNull
+  res.body.projectUrl: isNull
+  res.body.repositoryUrl: isNull
+}

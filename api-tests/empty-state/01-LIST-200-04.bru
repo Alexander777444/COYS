@@ -1,0 +1,23 @@
+meta {
+  name: LIST-200-04 list an empty table
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.data: isEmpty
+  res.body.meta.total: eq 0
+  res.body.meta.limit: eq 20
+  res.body.meta.offset: eq 0
+}

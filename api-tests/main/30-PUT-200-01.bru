@@ -1,0 +1,43 @@
+meta {
+  name: PUT-200-01 replace a project and keep its own slug
+  type: http
+  seq: 33
+}
+
+put {
+  url: {{baseUrl}}/api/v1/projects/{{putId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "QA Put Target Replaced",
+    "slug": "qa-put-target",
+    "description": "Minimal replacement body; every optional field is omitted."
+  }
+}
+
+script:post-response {
+  test("createdAt is unchanged", function () {
+    expect(res.body.createdAt).to.equal(bru.getVar("putCreatedAt"));
+  });
+  test("updatedAt changed", function () {
+    expect(res.body.updatedAt).to.not.equal(res.body.createdAt);
+  });
+}
+
+assert {
+  res.status: eq 200
+  res.body.slug: eq qa-put-target
+  res.body.title: eq QA Put Target Replaced
+  res.body.clientName: isNull
+  res.body.technologies: isEmpty
+  res.body.projectUrl: isNull
+  res.body.repositoryUrl: isNull
+  res.body.status: eq DRAFT
+}

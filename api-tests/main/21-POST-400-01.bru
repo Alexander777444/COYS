@@ -1,0 +1,28 @@
+meta {
+  name: POST-400-01 body is missing the title
+  type: http
+  seq: 24
+}
+
+post {
+  url: {{baseUrl}}/api/v1/projects
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "slug": "qa-no-title",
+    "description": "Missing the title field."
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.error.code: eq VALIDATION_ERROR
+  res.body.error.details[0].path: eq title
+}

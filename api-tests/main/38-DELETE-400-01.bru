@@ -1,0 +1,21 @@
+meta {
+  name: DELETE-400-01 id is not a UUID
+  type: http
+  seq: 41
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/projects/not-a-uuid
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 400
+  res.body.error.code: eq VALIDATION_ERROR
+  res.body.error.details[0].path: eq id
+}

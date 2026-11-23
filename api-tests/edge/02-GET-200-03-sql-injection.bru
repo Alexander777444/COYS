@@ -1,0 +1,22 @@
+meta {
+  name: GET-200-03 edge seed with SQL-injection text
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects/00000000-0000-4000-8000-000000000102
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.title: eq '; DROP TABLE projects; --
+  res.body.slug: eq sql-injection-attempt
+  res.body.description: contains parameterized
+}

@@ -25,7 +25,7 @@ Sunday is tight for two interfaces: do M6a first (≈1–2 h), then admin, then 
 | M1 Auth | `docs/specs/M1-auth.md` | 🔎 | `feat/m1-m3-projects-api` |
 | M2 Projects read | `docs/specs/M2-projects-read.md` | 🔎 | `feat/m2-projects-read` |
 | M3 Projects write | `docs/specs/M3-projects-write.md` | 🔎 | `feat/m3-projects-write` |
-| M4 QA suite | `docs/specs/M4-qa.md` | ⬜ | `feat/m4-qa` |
+| M4 QA suite | `docs/specs/M4-qa.md` | 🔎 | `feat/m4-qa-suite` |
 | M5 Docs | `docs/specs/M5-docs.md` | ⬜ | `feat/m5-docs` |
 | M6a Reader role (after G3) | `docs/specs/M6a-reader-role.md` | ⬜ | `feat/m6a-reader-role` |
 | M6b Admin console (gated) | `docs/specs/M6b-admin-console.md` | ⬜ | `feat/m6b-admin-console` |
