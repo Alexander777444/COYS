@@ -1,0 +1,39 @@
+%% Sequence: login, then POST /projects with 201, 409 and 401 branches.
+sequenceDiagram
+  autonumber
+  participant C as Client
+  participant A as Auth route/controller/service
+  participant M as authenticate + validate
+  participant K as ProjectController
+  participant S as ProjectService
+  participant R as ProjectRepository
+  participant D as SQLite
+  participant E as errorHandler
+
+  C->>A: POST /api/v1/auth/login { username, password }
+  A-->>C: 200 { token, tokenType, expiresIn }
+
+  alt missing or invalid token
+    C->>M: POST /api/v1/projects (no/invalid token)
+    M->>E: UnauthorizedError (MISSING/INVALID/TOKEN_EXPIRED)
+    E-->>C: 401 + WWW-Authenticate: Bearer
+  else valid token
+    C->>M: POST /api/v1/projects (Bearer token, body)
+    M->>K: req.validated.body
+    K->>S: create(data)
+    S->>R: create({ id: randomUUID(), ...data })
+    R->>D: INSERT INTO projects (...)
+
+    alt duplicate slug (SQLITE_CONSTRAINT_UNIQUE)
+      D-->>R: UNIQUE constraint violation
+      R->>E: ConflictError
+      E-->>C: 409 { error: { code: CONFLICT, ... } }
+    else insert succeeds
+      D-->>R: row inserted
+      R->>D: SELECT * FROM projects WHERE id = ?
+      D-->>R: created row
+      R-->>S: project
+      S-->>K: project
+      K-->>C: 201 + Location: /api/v1/projects/{id}
+    end
+  end

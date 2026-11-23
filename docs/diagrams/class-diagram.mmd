@@ -1,0 +1,59 @@
+%% Class diagram: controllers, services, repositories, errors and DI.
+classDiagram
+  direction LR
+
+  class AuthController {
+    -AuthService service
+    +login(req, res)
+  }
+  class ProjectController {
+    -ProjectService service
+    +list(req, res)
+    +getById(req, res)
+    +create(req, res)
+    +replace(req, res)
+    +remove(req, res)
+  }
+  class AuthService {
+    -config
+    +login(username, password)
+  }
+  class ProjectService {
+    -ProjectRepository repository
+    +list(filters)
+    +getById(id)
+    +create(data)
+    +replace(id, data)
+    +remove(id)
+  }
+  class ProjectRepository {
+    -db
+    +findAll(filters)
+    +findById(id)
+    +create(project)
+    +replace(id, data)
+    +deleteById(id)
+  }
+  class AppError {
+    +int statusCode
+    +string code
+    +string message
+    +array|null details
+    +bool isOperational
+  }
+  class ValidationError
+  class UnauthorizedError
+  class NotFoundError
+  class ConflictError
+
+  AppError <|-- ValidationError
+  AppError <|-- UnauthorizedError
+  AppError <|-- NotFoundError
+  AppError <|-- ConflictError
+
+  AuthController --> AuthService : injected
+  ProjectController --> ProjectService : injected
+  ProjectService --> ProjectRepository : injected
+  AuthService ..> UnauthorizedError : throws
+  ProjectService ..> NotFoundError : throws
+  ProjectRepository ..> ConflictError : translates UNIQUE

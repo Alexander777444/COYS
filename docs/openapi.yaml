@@ -1,0 +1,846 @@
+openapi: 3.0.3
+info:
+  title: COYS — Studio Portfolio API
+  version: 1.0.0
+  description: |
+    REST API that manages the portfolio projects of a software studio. It is the
+    backend (headless CMS) that feeds the studio website.
+
+    Base path for the resource endpoints: `/api/v1`. JSON only, camelCase fields.
+    Every project endpoint requires `Authorization: Bearer <token>`; the token is
+    obtained from `POST /api/v1/auth/login`.
+
+    ## Status-code order
+
+    The middleware order is deliberate: `authenticate (401) → validate params (400)
+    → validate query/body (400) → service (404) → repository (409) → unexpected (500)`.
+    A request without a token is always 401, even when its id or body is also invalid.
+
+    ## Error envelope
+
+    Every non-2xx response uses the same shape:
+
+    ```json
+    { "error": { "code": "NOT_FOUND", "message": "Project '…' was not found", "details": null } }
+    ```
+
+    `details` is `null` for most errors and an array of `{ path, message }` for
+    `VALIDATION_ERROR`. The server never leaks stack traces, SQL or file paths.
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+tags:
+  - name: Health
+    description: Public liveness endpoint.
+  - name: Auth
+    description: Public login endpoint that issues the JWT.
+  - name: Projects
+    description: CRUD for portfolio projects. All operations require a bearer token.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        HS256 JWT returned by `POST /api/v1/auth/login`. Send it as
+        `Authorization: Bearer <token>`. Missing, invalid and expired tokens produce
+        401 `MISSING_TOKEN`, `INVALID_TOKEN` and `TOKEN_EXPIRED` respectively, always
+        with the `WWW-Authenticate: Bearer` header.
+  parameters:
+    ProjectId:
+      name: id
+      in: path
+      required: true
+      description: Project UUID (strict RFC 4122). A malformed value is a 400, not a 404.
+      schema:
+        type: string
+        format: uuid
+        example: 00000000-0000-4000-8000-0000000000ff
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+          example: ok
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          minLength: 1
+          example: admin
+        password:
+          type: string
+          minLength: 1
+          format: password
+          example: change-me
+    LoginResponse:
+      type: object
+      required: [token, tokenType, expiresIn]
+      properties:
+        token:
+          type: string
+          description: HS256 JWT with claims `{ sub, iat, exp }`.
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTczNjA4NzIwMCwiZXhwIjoxNzM2MDkwODAwfQ.example-signature
+        tokenType:
+          type: string
+          enum: [Bearer]
+          example: Bearer
+        expiresIn:
+          type: string
+          description: Value of the `JWT_EXPIRES_IN` environment variable (default `1h`).
+          example: 1h
+    ProjectStatus:
+      type: string
+      enum: [DRAFT, PUBLISHED, ARCHIVED]
+      example: PUBLISHED
+    Project:
+      type: object
+      required:
+        [id, title, slug, description, clientName, technologies, projectUrl,
+         repositoryUrl, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-generated UUID v4.
+          example: 00000000-0000-4000-8000-000000000001
+        title:
+          type: string
+          minLength: 1
+          maxLength: 150
+          example: Portfolio Website
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+          example: portfolio-website
+        description:
+          type: string
+          minLength: 1
+          maxLength: 5000
+          example: The studio's own portfolio site, built with the same API it documents.
+        clientName:
+          type: string
+          minLength: 1
+          maxLength: 150
+          nullable: true
+          example: Acme Studios
+        technologies:
+          type: array
+          maxItems: 30
+          items:
+            type: string
+            minLength: 1
+            maxLength: 50
+          example: [Node.js, React]
+        projectUrl:
+          type: string
+          format: uri
+          pattern: '^https?://'
+          maxLength: 2048
+          nullable: true
+          example: https://example.com/portfolio-website
+        repositoryUrl:
+          type: string
+          format: uri
+          pattern: '^https?://'
+          maxLength: 2048
+          nullable: true
+          example: https://example.com/portfolio-website.git
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-01-01T10:00:00.000Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-01-01T10:00:00.000Z'
+    ProjectInput:
+      type: object
+      additionalProperties: false
+      description: |
+        Body for POST and PUT. `PUT` is a full replacement: required fields must be
+        sent and omitted optional fields fall back to their defaults. Unknown fields
+        (including `id`, `createdAt`, `updatedAt`) are rejected with 400.
+      required: [title, slug, description]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 150
+          example: Portfolio Website
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+          example: portfolio-website
+        description:
+          type: string
+          minLength: 1
+          maxLength: 5000
+          example: The studio's own portfolio site, built with the same API it documents.
+        clientName:
+          type: string
+          minLength: 1
+          maxLength: 150
+          nullable: true
+          default: null
+          example: Acme Studios
+        technologies:
+          type: array
+          maxItems: 30
+          items:
+            type: string
+            minLength: 1
+            maxLength: 50
+          default: []
+          example: [Node.js, React]
+        projectUrl:
+          type: string
+          format: uri
+          pattern: '^https?://'
+          maxLength: 2048
+          nullable: true
+          default: null
+          example: https://example.com/portfolio-website
+        repositoryUrl:
+          type: string
+          format: uri
+          pattern: '^https?://'
+          maxLength: 2048
+          nullable: true
+          default: null
+          example: https://example.com/portfolio-website.git
+        status:
+          type: string
+          enum: [DRAFT, PUBLISHED, ARCHIVED]
+          default: DRAFT
+          example: PUBLISHED
+    ProjectListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+        meta:
+          type: object
+          required: [total, limit, offset]
+          properties:
+            total:
+              type: integer
+              minimum: 0
+              description: Rows that match the filters, independent of limit/offset.
+              example: 5
+            limit:
+              type: integer
+              minimum: 1
+              maximum: 100
+              example: 20
+            offset:
+              type: integer
+              minimum: 0
+              example: 0
+    ValidationIssue:
+      type: object
+      required: [path, message]
+      properties:
+        path:
+          type: string
+          example: title
+        message:
+          type: string
+          example: 'Invalid input: expected string, received undefined'
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, details]
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code.
+              enum:
+                - VALIDATION_ERROR
+                - INVALID_JSON
+                - PAYLOAD_TOO_LARGE
+                - MISSING_TOKEN
+                - INVALID_TOKEN
+                - TOKEN_EXPIRED
+                - INVALID_CREDENTIALS
+                - NOT_FOUND
+                - ROUTE_NOT_FOUND
+                - CONFLICT
+                - INTERNAL_ERROR
+            message:
+              type: string
+              description: Human-readable message, safe to show to the client.
+              example: Request validation failed
+            details:
+              type: array
+              nullable: true
+              description: |
+                `null` for most errors. For `VALIDATION_ERROR` it contains one entry
+                per Zod issue.
+              items:
+                $ref: '#/components/schemas/ValidationIssue'
+  responses:
+    BadRequestValidation:
+      description: The request failed Zod validation (missing field, invalid value or malformed UUID).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            validationError:
+              summary: A required body field is missing
+              value:
+                error:
+                  code: VALIDATION_ERROR
+                  message: Request validation failed
+                  details:
+                    - path: title
+                      message: 'Invalid input: expected string, received undefined'
+    BadRequestListQuery:
+      description: A query parameter failed Zod validation (`status`, `limit` or `offset`).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            invalidQuery:
+              summary: limit is not a number
+              value:
+                error:
+                  code: VALIDATION_ERROR
+                  message: Request validation failed
+                  details:
+                    - path: limit
+                      message: 'Invalid input: expected number, received NaN'
+    BadRequestProjectId:
+      description: The `{id}` path parameter is not a valid UUID.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            invalidUuid:
+              summary: Malformed project id
+              value:
+                error:
+                  code: VALIDATION_ERROR
+                  message: Request validation failed
+                  details:
+                    - path: id
+                      message: id must be a valid UUID
+    BadRequestPut:
+      description: |
+        The `{id}` is not a UUID, or the replacement body is invalid, is not JSON, or
+        exceeds the 100 kb limit. Params are validated before the body.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            invalidUuid:
+              summary: Malformed project id
+              value:
+                error:
+                  code: VALIDATION_ERROR
+                  message: Request validation failed
+                  details:
+                    - path: id
+                      message: id must be a valid UUID
+            validationError:
+              summary: title is missing
+              value:
+                error:
+                  code: VALIDATION_ERROR
+                  message: Request validation failed
+                  details:
+                    - path: title
+                      message: 'Invalid input: expected string, received undefined'
+            invalidJson:
+              summary: Malformed JSON body
+              value:
+                error:
+                  code: INVALID_JSON
+                  message: Request body is not valid JSON
+                  details: null
+            payloadTooLarge:
+              summary: Body larger than 100 kb
+              value:
+                error:
+                  code: PAYLOAD_TOO_LARGE
+                  message: Request body exceeds the 100 kb limit
+                  details: null
+    BadRequestLogin:
+      description: The login body is invalid, is not JSON, or exceeds the 100 kb limit.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            validationError:
+              summary: password is missing
+              value:
+                error:
+                  code: VALIDATION_ERROR
+                  message: Request validation failed
+                  details:
+                    - path: password
+                      message: Password is required
+            invalidJson:
+              summary: Malformed JSON body
+              value:
+                error:
+                  code: INVALID_JSON
+                  message: Request body is not valid JSON
+                  details: null
+            payloadTooLarge:
+              summary: Body larger than 100 kb
+              value:
+                error:
+                  code: PAYLOAD_TOO_LARGE
+                  message: Request body exceeds the 100 kb limit
+                  details: null
+    BadRequestProjectBody:
+      description: The project body is invalid, is not JSON, or exceeds the 100 kb limit.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            validationError:
+              summary: title is missing
+              value:
+                error:
+                  code: VALIDATION_ERROR
+                  message: Request validation failed
+                  details:
+                    - path: title
+                      message: 'Invalid input: expected string, received undefined'
+            unknownField:
+              summary: Strict body rejects an extra field
+              value:
+                error:
+                  code: VALIDATION_ERROR
+                  message: Request validation failed
+                  details:
+                    - path: id
+                      message: 'Unrecognized key: "id"'
+            invalidJson:
+              summary: Malformed JSON body
+              value:
+                error:
+                  code: INVALID_JSON
+                  message: Request body is not valid JSON
+                  details: null
+            payloadTooLarge:
+              summary: Body larger than 100 kb
+              value:
+                error:
+                  code: PAYLOAD_TOO_LARGE
+                  message: Request body exceeds the 100 kb limit
+                  details: null
+    UnauthorizedToken:
+      description: The bearer token is missing, malformed, signed with another secret or expired.
+      headers:
+        WWW-Authenticate:
+          description: Always `Bearer` on a 401 response.
+          schema:
+            type: string
+          example: Bearer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            missingToken:
+              summary: No Authorization header
+              value:
+                error:
+                  code: MISSING_TOKEN
+                  message: A Bearer token is required in the Authorization header
+                  details: null
+            invalidToken:
+              summary: Garbage or wrongly signed token
+              value:
+                error:
+                  code: INVALID_TOKEN
+                  message: The access token is not valid
+                  details: null
+            tokenExpired:
+              summary: Token past its exp claim
+              value:
+                error:
+                  code: TOKEN_EXPIRED
+                  message: The access token has expired
+                  details: null
+    UnauthorizedCredentials:
+      description: The username or password is wrong. The response is identical for both cases.
+      headers:
+        WWW-Authenticate:
+          description: Always `Bearer` on a 401 response.
+          schema:
+            type: string
+          example: Bearer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            invalidCredentials:
+              summary: Wrong username or password
+              value:
+                error:
+                  code: INVALID_CREDENTIALS
+                  message: Invalid username or password
+                  details: null
+    ProjectNotFound:
+      description: The UUID is valid but no project exists with it (or it was already deleted).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            notFound:
+              summary: Valid UUID, no row
+              value:
+                error:
+                  code: NOT_FOUND
+                  message: "Project '00000000-0000-4000-8000-0000000000ff' was not found"
+                  details: null
+    SlugConflict:
+      description: |
+        Another project already uses the requested slug. On POST this is the required
+        behaviour; on PUT it is a documented extra (slug conflicts with a different row).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            conflict:
+              summary: Slug already in use
+              value:
+                error:
+                  code: CONFLICT
+                  message: "Project slug 'portfolio-website' is already in use"
+                  details: null
+    InternalError:
+      description: |
+        Unexpected server failure (for example, the database is unavailable). The real
+        cause is logged server-side only; the client gets a generic message.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            internalError:
+              summary: Database unavailable or another unexpected failure
+              value:
+                error:
+                  code: INTERNAL_ERROR
+                  message: Unexpected server error
+                  details: null
+    NoContent:
+      description: The project was deleted. The response has no body.
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness check
+      operationId: getHealth
+      description: Public endpoint used to check that the process is up. It does not touch the database.
+      security: []
+      responses:
+        '200':
+          description: The server is running.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: ok
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Obtain a JWT
+      operationId: login
+      description: |
+        Checks the single API user from configuration and returns a signed HS256 JWT.
+        Wrong username and wrong password return exactly the same 401 response, so the
+        endpoint does not reveal which value was incorrect.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              username: admin
+              password: change-me
+      responses:
+        '200':
+          description: Credentials accepted; the token can be used on the project endpoints.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              example:
+                token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTczNjA4NzIwMCwiZXhwIjoxNzM2MDkwODAwfQ.example-signature
+                tokenType: Bearer
+                expiresIn: 1h
+        '400':
+          $ref: '#/components/responses/BadRequestLogin'
+        '401':
+          $ref: '#/components/responses/UnauthorizedCredentials'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/projects:
+    get:
+      tags: [Projects]
+      summary: List projects
+      operationId: listProjects
+      description: |
+        Returns a page of projects ordered by `created_at DESC, id ASC`. Unknown query
+        parameters are ignored. An empty table is a 200 with `data: []`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Optional status filter.
+          schema:
+            type: string
+            enum: [DRAFT, PUBLISHED, ARCHIVED]
+            example: PUBLISHED
+        - name: limit
+          in: query
+          required: false
+          description: Page size.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          required: false
+          description: Number of rows to skip.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: A page of projects plus pagination metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectListResponse'
+              example:
+                data:
+                  - id: 00000000-0000-4000-8000-000000000001
+                    title: Portfolio Website
+                    slug: portfolio-website
+                    description: The studio's own portfolio site, built with the same API it documents.
+                    clientName: null
+                    technologies: [Node.js, React]
+                    projectUrl: https://example.com/portfolio-website
+                    repositoryUrl: https://example.com/portfolio-website.git
+                    status: PUBLISHED
+                    createdAt: '2026-01-01T10:00:00.000Z'
+                    updatedAt: '2026-01-01T10:00:00.000Z'
+                meta:
+                  total: 5
+                  limit: 20
+                  offset: 0
+        '400':
+          $ref: '#/components/responses/BadRequestListQuery'
+        '401':
+          $ref: '#/components/responses/UnauthorizedToken'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [Projects]
+      summary: Create a project
+      operationId: createProject
+      description: |
+        Creates a project. The server generates `id`, `createdAt` and `updatedAt`; the
+        `Location` header points at the new resource. A duplicate slug is a 409.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectInput'
+            example:
+              title: QA Put Target
+              slug: qa-put-target
+              description: Created by POST-201-01 and later replaced by PUT-200-01.
+              clientName: QA Client
+              technologies: [Node.js, SQLite]
+              projectUrl: https://example.com/qa-put-target
+              repositoryUrl: https://example.com/qa-put-target.git
+              status: PUBLISHED
+      responses:
+        '201':
+          description: Project created.
+          headers:
+            Location:
+              description: Relative URL of the created project.
+              schema:
+                type: string
+                example: /api/v1/projects/c1f4a2d8-3b7e-4a91-9d2f-6b8e0c5a1f47
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+              example:
+                id: c1f4a2d8-3b7e-4a91-9d2f-6b8e0c5a1f47
+                title: QA Put Target
+                slug: qa-put-target
+                description: Created by POST-201-01 and later replaced by PUT-200-01.
+                clientName: QA Client
+                technologies: [Node.js, SQLite]
+                projectUrl: https://example.com/qa-put-target
+                repositoryUrl: https://example.com/qa-put-target.git
+                status: PUBLISHED
+                createdAt: '2026-01-06T10:00:00.000Z'
+                updatedAt: '2026-01-06T10:00:00.000Z'
+        '400':
+          $ref: '#/components/responses/BadRequestProjectBody'
+        '401':
+          $ref: '#/components/responses/UnauthorizedToken'
+        '409':
+          $ref: '#/components/responses/SlugConflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/projects/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    get:
+      tags: [Projects]
+      summary: Get a project by id
+      operationId: getProject
+      description: Returns one project. A valid UUID that does not exist is a 404.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The requested project.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+              example:
+                id: 00000000-0000-4000-8000-000000000001
+                title: Portfolio Website
+                slug: portfolio-website
+                description: The studio's own portfolio site, built with the same API it documents.
+                clientName: null
+                technologies: [Node.js, React]
+                projectUrl: https://example.com/portfolio-website
+                repositoryUrl: https://example.com/portfolio-website.git
+                status: PUBLISHED
+                createdAt: '2026-01-01T10:00:00.000Z'
+                updatedAt: '2026-01-01T10:00:00.000Z'
+        '400':
+          $ref: '#/components/responses/BadRequestProjectId'
+        '401':
+          $ref: '#/components/responses/UnauthorizedToken'
+        '404':
+          $ref: '#/components/responses/ProjectNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags: [Projects]
+      summary: Replace a project
+      operationId: replaceProject
+      description: |
+        Full replacement: every column is overwritten and `updatedAt` is refreshed.
+        Required fields must be sent; omitted optional fields reset to their defaults.
+        The 409 is a documented extra for a slug that belongs to another project.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectInput'
+            example:
+              title: Portfolio Website
+              slug: portfolio-website
+              description: Replaced by PUT-200-01.
+              clientName: Acme Studios
+              technologies: [Node.js, React, SQLite]
+              projectUrl: https://example.com/portfolio-website
+              repositoryUrl: https://example.com/portfolio-website.git
+              status: PUBLISHED
+      responses:
+        '200':
+          description: The project was replaced.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+              example:
+                id: 00000000-0000-4000-8000-000000000001
+                title: Portfolio Website
+                slug: portfolio-website
+                description: Replaced by PUT-200-01.
+                clientName: Acme Studios
+                technologies: [Node.js, React, SQLite]
+                projectUrl: https://example.com/portfolio-website
+                repositoryUrl: https://example.com/portfolio-website.git
+                status: PUBLISHED
+                createdAt: '2026-01-01T10:00:00.000Z'
+                updatedAt: '2026-01-06T11:00:00.000Z'
+        '400':
+          $ref: '#/components/responses/BadRequestPut'
+        '401':
+          $ref: '#/components/responses/UnauthorizedToken'
+        '404':
+          $ref: '#/components/responses/ProjectNotFound'
+        '409':
+          $ref: '#/components/responses/SlugConflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags: [Projects]
+      summary: Delete a project
+      operationId: deleteProject
+      description: Deletes the project and returns 204 with no body. A second delete is a 404.
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          $ref: '#/components/responses/NoContent'
+        '400':
+          $ref: '#/components/responses/BadRequestProjectId'
+        '401':
+          $ref: '#/components/responses/UnauthorizedToken'
+        '404':
+          $ref: '#/components/responses/ProjectNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'

@@ -1,0 +1,23 @@
+%% Layered architecture: request flow and dependency direction.
+flowchart LR
+  C[Client / Bruno / Swagger UI] --> R[Route]
+  R --> A[authenticate]
+  A --> V[validate - Zod]
+  V --> K[Controller]
+  K --> S[Service]
+  S --> P[Repository]
+  P --> D[(SQLite)]
+
+  A -. AppError .-> E[errorHandler]
+  V -. AppError .-> E
+  S -. AppError .-> E
+  P -. AppError .-> E
+  D -. unexpected .-> E
+  E --> C
+
+  subgraph Wiring["Composition root (routes/index.js)"]
+    W1[db + config] --> W2[ProjectRepository]
+    W2 --> W3[ProjectService]
+    W3 --> W4[ProjectController]
+    W4 --> R
+  end

@@ -1,0 +1,15 @@
+%% ER diagram for the projects table (MVP data model).
+erDiagram
+  PROJECTS {
+    TEXT id PK "UUID v4, server-generated"
+    TEXT title "NOT NULL, 1-150 chars"
+    TEXT slug UK "NOT NULL, UNIQUE, 1-100 chars"
+    TEXT description "NOT NULL, 1-5000 chars"
+    TEXT client_name "NULL or 1-150 chars"
+    TEXT technologies "NOT NULL, JSON array, default []"
+    TEXT project_url "NULL or http(s) URL, <= 2048 chars"
+    TEXT repository_url "NULL or http(s) URL, <= 2048 chars"
+    TEXT status "DRAFT | PUBLISHED | ARCHIVED, default DRAFT"
+    TEXT created_at "ISO-8601 UTC, DB-generated"
+    TEXT updated_at "ISO-8601 UTC, refreshed on UPDATE"
+  }
