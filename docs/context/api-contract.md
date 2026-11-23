@@ -64,6 +64,7 @@ PUT is **full replacement**: required fields must be sent; omitted optional fiel
   via `z.coerce.number()`. Invalid value → 400. Unknown query params are ignored.
 - List response: `{ "data": [Project…], "meta": { "total": n, "limit": n, "offset": n } }`.
   Order: `created_at DESC, id ASC`. An empty table → 200 with `data: []`.
+  `meta.total` counts the rows that match the filters (so with `?status=PUBLISHED` it is 3, not 5).
 
 ## Status codes (what triggers each)
 
