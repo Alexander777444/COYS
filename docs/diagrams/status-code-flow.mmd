@@ -1,0 +1,13 @@
+%% Status-code decision flow (order matters).
+flowchart TD
+  R[Incoming request] --> A{Authenticated?}
+  A -- No token / invalid / expired --> U401[401 UNAUTHORIZED<br/>MISSING_TOKEN | INVALID_TOKEN | TOKEN_EXPIRED<br/>WWW-Authenticate: Bearer]
+  A -- Yes / public route --> V{Valid params, query, body, JSON, size?}
+  V -- No --> B400[400 BAD REQUEST<br/>VALIDATION_ERROR | INVALID_JSON | PAYLOAD_TOO_LARGE]
+  V -- Yes --> N{Resource exists / route exists?}
+  N -- No --> N404[404 NOT FOUND<br/>NOT_FOUND | ROUTE_NOT_FOUND]
+  N -- Yes --> C{Conflict?}
+  C -- Duplicate slug --> C409[409 CONFLICT<br/>CONFLICT]
+  C -- No --> O{Operation succeeds?}
+  O -- Unexpected failure --> I500[500 INTERNAL ERROR<br/>INTERNAL_ERROR]
+  O -- Yes --> S2xx[2xx SUCCESS<br/>200 / 201 + Location / 204]
