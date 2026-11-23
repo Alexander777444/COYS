@@ -47,11 +47,6 @@ The Bruno collection lives in `api-tests/`. It is the contract suite for the 24 
 status-code cases plus extra robustness/edge cases. Run it from the repository root with
 two terminals: **A** for the server, **B** for the tests.
 
-> **Copy-paste warning.** Never type `<from .env>` or `<signed -1s>` literally: those are
-> descriptions, not values. The block below computes every value from `server/.env`. A
-> literal placeholder makes `00-login` return `401 INVALID_CREDENTIALS`, and every
-> protected case then cascades to `401 INVALID_TOKEN`.
-
 Setup once per shell in terminal B (repository root):
 
 ```powershell
