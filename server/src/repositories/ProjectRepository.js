@@ -1,5 +1,7 @@
 // All SQL for the `projects` table lives here. Rows are mapped to camelCase domain
 // objects, so services and controllers never see SQLite column names or JSON strings.
+import { ConflictError } from '../errors/ConflictError.js';
+
 const SELECT_ALL = 'SELECT * FROM projects';
 const LIST_ORDER = ' ORDER BY created_at DESC, id ASC';
 
@@ -31,6 +33,80 @@ export class ProjectRepository {
     const row = this.#db.prepare(`${SELECT_ALL} WHERE id = ?`).get(id);
     return row ? toProject(row) : null;
   }
+
+  async create(project) {
+    try {
+      this.#db
+        .prepare(
+          `INSERT INTO projects
+             (id, title, slug, description, client_name, technologies, project_url, repository_url, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          project.id,
+          project.title,
+          project.slug,
+          project.description,
+          project.clientName,
+          JSON.stringify(project.technologies),
+          project.projectUrl,
+          project.repositoryUrl,
+          project.status,
+        );
+    } catch (error) {
+      throw translateConstraint(error, project.slug);
+    }
+
+    // Read the row back so the response contains the DB-generated timestamps.
+    return this.findById(project.id);
+  }
+
+  // Full replacement: every column is overwritten and updated_at is refreshed by SQLite.
+  // changes === 0 means the id does not exist (the service turns that into 404).
+  async replace(id, data) {
+    try {
+      const { changes } = this.#db
+        .prepare(
+          `UPDATE projects SET
+             title = ?, slug = ?, description = ?, client_name = ?, technologies = ?,
+             project_url = ?, repository_url = ?, status = ?,
+             updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+           WHERE id = ?`,
+        )
+        .run(
+          data.title,
+          data.slug,
+          data.description,
+          data.clientName,
+          JSON.stringify(data.technologies),
+          data.projectUrl,
+          data.repositoryUrl,
+          data.status,
+          id,
+        );
+
+      if (changes === 0) return null;
+    } catch (error) {
+      throw translateConstraint(error, data.slug);
+    }
+
+    return this.findById(id);
+  }
+
+  async deleteById(id) {
+    const { changes } = this.#db.prepare('DELETE FROM projects WHERE id = ?').run(id);
+    return changes > 0;
+  }
+}
+
+// The UNIQUE constraint on `slug` is the source of the 409; every other DB error
+// (missing table, broken connection…) must keep bubbling up and become a 500.
+function translateConstraint(error, slug) {
+  if (error?.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    return new ConflictError(`Project slug '${slug}' is already in use`);
+  }
+
+  return error;
 }
 
 // DB row (snake_case) -> domain object (camelCase). `technologies` is stored as JSON text.
