@@ -1,5 +1,6 @@
-// Business rules for reading projects: build the list envelope and turn
-// "row not found" into the 404 required by the API contract.
+// Business rules for projects: build the list envelope, generate ids, and turn
+// "no row" into the 404 required by the API contract.
+import { randomUUID } from 'node:crypto';
 import { NotFoundError } from '../errors/NotFoundError.js';
 
 export class ProjectService {
@@ -21,5 +22,24 @@ export class ProjectService {
     if (!project) throw new NotFoundError('Project', id);
 
     return project;
+  }
+
+  async create(data) {
+    // Ids are generated here, not in the repository or by the client.
+    return this.#repository.create({ id: randomUUID(), ...data });
+  }
+
+  async replace(id, data) {
+    const project = await this.#repository.replace(id, data);
+
+    if (!project) throw new NotFoundError('Project', id);
+
+    return project;
+  }
+
+  async remove(id) {
+    const deleted = await this.#repository.deleteById(id);
+
+    if (!deleted) throw new NotFoundError('Project', id);
   }
 }
