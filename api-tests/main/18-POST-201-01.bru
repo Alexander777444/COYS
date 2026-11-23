@@ -1,0 +1,46 @@
+meta {
+  name: POST-201-01 create a project with every optional field
+  type: http
+  seq: 21
+}
+
+post {
+  url: {{baseUrl}}/api/v1/projects
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "QA Put Target",
+    "slug": "qa-put-target",
+    "description": "Created by POST-201-01 and later replaced by PUT-200-01.",
+    "clientName": "QA Client",
+    "technologies": ["Node.js", "SQLite"],
+    "projectUrl": "https://example.com/qa-put-target",
+    "repositoryUrl": "https://example.com/qa-put-target.git",
+    "status": "PUBLISHED"
+  }
+}
+
+script:post-response {
+  bru.setVar("putId", res.body.id);
+  bru.setVar("putCreatedAt", res.body.createdAt);
+  test("timestamps start equal", function () {
+    expect(res.body.createdAt).to.equal(res.body.updatedAt);
+  });
+}
+
+assert {
+  res.status: eq 201
+  res.headers.location: matches ^/api/v1/projects/[0-9a-f-]{36}$
+  res.body.id: isString
+  res.body.slug: eq qa-put-target
+  res.body.clientName: eq QA Client
+  res.body.status: eq PUBLISHED
+  res.body.technologies: isArray
+}

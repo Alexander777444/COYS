@@ -1,0 +1,29 @@
+meta {
+  name: PUT-409-01 replacement uses another project's slug
+  type: http
+  seq: 37
+}
+
+put {
+  url: {{baseUrl}}/api/v1/projects/{{defaultsId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "Stolen Slug",
+    "slug": "qa-put-target",
+    "description": "This slug belongs to the project created by POST-201-01."
+  }
+}
+
+assert {
+  res.status: eq 409
+  res.body.error.code: eq CONFLICT
+  res.body.error.message: contains already in use
+}

@@ -1,0 +1,29 @@
+meta {
+  name: POST-400-02 slug format is invalid
+  type: http
+  seq: 25
+}
+
+post {
+  url: {{baseUrl}}/api/v1/projects
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "Bad Slug",
+    "slug": "Bad Slug",
+    "description": "Uppercase letters and spaces are not allowed."
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.error.code: eq VALIDATION_ERROR
+  res.body.error.details[0].path: eq slug
+}

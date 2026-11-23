@@ -1,0 +1,30 @@
+meta {
+  name: POST-400-05 body sends a server-generated id
+  type: http
+  seq: 28
+}
+
+post {
+  url: {{baseUrl}}/api/v1/projects
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "id": "00000000-0000-4000-8000-0000000000aa",
+    "title": "With Id",
+    "slug": "qa-with-id",
+    "description": "The client must not choose the id."
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.error.code: eq VALIDATION_ERROR
+  res.body.error.details[0].message: contains Unrecognized key
+}

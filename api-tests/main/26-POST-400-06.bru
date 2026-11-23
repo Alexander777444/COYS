@@ -1,0 +1,29 @@
+meta {
+  name: POST-400-06 body is not valid JSON
+  type: http
+  seq: 29
+}
+
+post {
+  url: {{baseUrl}}/api/v1/projects
+  body: text
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:text {
+  {"title":
+}
+
+assert {
+  res.status: eq 400
+  res.body.error.code: eq INVALID_JSON
+  res.body.error.details: isNull
+}

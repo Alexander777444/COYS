@@ -1,0 +1,33 @@
+meta {
+  name: POST-400-07 body is larger than 100 kb
+  type: http
+  seq: 30
+}
+
+post {
+  url: {{baseUrl}}/api/v1/projects
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+script:pre-request {
+  bru.setVar("bigDescription", "a".repeat(120000));
+}
+
+body:json {
+  {
+    "title": "Oversize Payload",
+    "slug": "qa-oversize-payload",
+    "description": "{{bigDescription}}"
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.error.code: eq PAYLOAD_TOO_LARGE
+  res.body.error.details: isNull
+}

@@ -1,0 +1,19 @@
+meta {
+  name: CLEANUP remove the project created by POST-201-02
+  type: http
+  seq: 45
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/projects/{{defaultsId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 204
+}

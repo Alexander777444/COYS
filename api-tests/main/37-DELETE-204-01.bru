@@ -1,0 +1,34 @@
+meta {
+  name: DELETE-204-01 delete a project created by the suite
+  type: http
+  seq: 40
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/projects/{{deleteId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+script:post-response {
+  test("204 response has an empty body", function () {
+    const body = res.body;
+    const empty =
+      body === undefined ||
+      body === null ||
+      body === "" ||
+      (typeof body === "object" && Object.keys(body).length === 0);
+    expect(empty).to.equal(true);
+  });
+  test("204 response has no content type", function () {
+    expect(res.headers["content-type"]).to.equal(undefined);
+  });
+}
+
+assert {
+  res.status: eq 204
+}

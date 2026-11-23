@@ -1,0 +1,29 @@
+meta {
+  name: POST-409-01 slug already exists in the seed
+  type: http
+  seq: 31
+}
+
+post {
+  url: {{baseUrl}}/api/v1/projects
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "Duplicate Slug",
+    "slug": "portfolio-website",
+    "description": "The seed already owns this slug."
+  }
+}
+
+assert {
+  res.status: eq 409
+  res.body.error.code: eq CONFLICT
+  res.body.error.message: contains already in use
+}
