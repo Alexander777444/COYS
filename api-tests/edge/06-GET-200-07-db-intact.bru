@@ -1,0 +1,20 @@
+meta {
+  name: GET-200-07 the table survived the SQL-injection text
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects/00000000-0000-4000-8000-000000000001
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.title: eq Portfolio Website
+}

@@ -1,0 +1,22 @@
+meta {
+  name: GET-200-02 edge seed with accents and quotes
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects/00000000-0000-4000-8000-000000000101
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.title: eq Diseño "Ágil" y 'calidad' — ñandú
+  res.body.slug: eq accents-and-quotes
+  res.body.technologies: isArray
+}

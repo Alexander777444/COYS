@@ -1,0 +1,29 @@
+meta {
+  name: GET-200-06 edge seed with a 100-character slug
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects/00000000-0000-4000-8000-000000000105
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+script:post-response {
+  test("slug is 100 characters", function () {
+    expect(res.body.slug.length).to.equal(100);
+  });
+  test("slug is 100 lowercase a characters", function () {
+    expect(res.body.slug).to.match(/^a{100}$/);
+  });
+}
+
+assert {
+  res.status: eq 200
+  res.body.title: eq Maximum Length Slug
+}
