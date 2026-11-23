@@ -1,0 +1,21 @@
+meta {
+  name: LIST-400-03 limit is above the maximum
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects?limit=101
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 400
+  res.body.error.code: eq VALIDATION_ERROR
+  res.body.error.details[0].path: eq limit
+}

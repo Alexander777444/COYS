@@ -1,0 +1,16 @@
+meta {
+  name: GET-401-01 get without a token
+  type: http
+  seq: 17
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects/00000000-0000-4000-8000-000000000001
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 401
+  res.body.error.code: eq MISSING_TOKEN
+}

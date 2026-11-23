@@ -1,0 +1,21 @@
+meta {
+  name: LIST-400-01 limit is not a number
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects?limit=abc
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 400
+  res.body.error.code: eq VALIDATION_ERROR
+  res.body.error.details[0].path: eq limit
+}

@@ -1,0 +1,16 @@
+meta {
+  name: LIST-401-01 list without a token
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 401
+  res.body.error.code: eq MISSING_TOKEN
+}

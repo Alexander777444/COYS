@@ -1,0 +1,24 @@
+meta {
+  name: LIST-200-02 filter by status=PUBLISHED
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects?status=PUBLISHED
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.meta.total: eq 3
+  res.body.data: isArray
+  res.body.data[0].status: eq PUBLISHED
+  res.body.data[1].status: eq PUBLISHED
+  res.body.data[2].status: eq PUBLISHED
+}

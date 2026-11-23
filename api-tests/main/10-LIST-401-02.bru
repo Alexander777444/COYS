@@ -1,0 +1,20 @@
+meta {
+  name: LIST-401-02 list with a garbage token
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: not-a-real-token
+}
+
+assert {
+  res.status: eq 401
+  res.body.error.code: eq INVALID_TOKEN
+}
