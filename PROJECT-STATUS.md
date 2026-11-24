@@ -1,96 +1,88 @@
 # PROJECT-STATUS — COYS
 
-**Snapshot date:** 2026-11-22
-**Branch:** `feat/m0-foundation`
-**Last code commit:** `2fd47bd` (M0 foundation complete)
-**Working tree:** expects to be clean after this documentation commit
-**Push / merge:** not done — the developer reviews every diff
+**Snapshot date:** 2026-11-23
+**Branch:** `main` (all modules M0–M5 merged)
+**Last code commit on main:** `800f70e` (merge of PR #9)
+**Source of truth for phases and gates:** `docs/plan/roadmap.md`
 
-## Current module
+## Current state
+
+The MVP is **frozen and stable** (Gate G3 passed). Nothing from M6 (frontend) has started.
 
 | Item | Status |
 |---|---|
-| M0 Foundation | 🔎 Implementation complete, waiting developer review |
-| Gate G0 | ⬜ Pending (only the developer ticks gates) |
-| M1 Auth | ⬜ Not started |
-| M2 Projects read | ⬜ Not started |
-| M3 Projects write | ⬜ Not started |
-| M4 QA suite | ⬜ Not started |
-| M5 Docs | ⬜ Not started |
-| M6a Reader role | ⬜ Gated after G3 |
-| M6b Admin console | ⬜ Gated after G3 |
-| M6c Public site | ⬜ Gated after G3 |
+| M0 Foundation | ✅ Merged (G0 passed) |
+| M1 Auth | ✅ Merged (G1 passed) |
+| M2 Projects read | ✅ Merged (G1 passed) |
+| M3 Projects write | ✅ Merged (G2 passed) |
+| M4 QA suite | ✅ Merged |
+| M5 Docs | ✅ Merged (G3 = MVP frozen) |
+| M6a Reader role | ⬜ Not started (gated, optional) |
+| M6b Admin console | ⬜ Not started (gated, optional) |
+| M6c Public site | ⬜ Not started (gated, optional) |
+| Gate G4 | ⬜ Pending |
 
 Legend: ⬜ todo · 🟡 in progress · 🔎 waiting developer review · ✅ merged by developer.
 
-## What M0 delivers
+## What exists
 
-- Express 5 application with the documented middleware order:
-  `helmet -> cors -> express.json({ limit: '100kb' }) -> /health -> routes -> notFound -> errorHandler`.
-- Validated environment (`config/env.js`); startup fails clearly on missing or short values.
-- SQLite connection (`db/database.js`) using `better-sqlite3`, with `PRAGMA foreign_keys = ON`.
-- Migration `001_create_projects.sql` with length checks, allowed statuses, JSON validation and
-  `UNIQUE slug` (the future 409).
-- Deterministic dev seeds (5 fixed-UUID projects) and edge-case seeds (accents, SQL-injection
-  text, max lengths, empty arrays, 100-character slug).
-- Database scripts: `db:reset`, `db:reset -- --empty`, `db:seed:edge`, `db:break`.
-- Error classes (`AppError`, `ValidationError`, `UnauthorizedError`, `NotFoundError`,
-  `ConflictError`).
-- Global `notFound` and `errorHandler`; standard envelope for 400/401/404/409/500.
-- `GET /health` returning `200 {"status":"ok"}`.
-- Graceful shutdown: `SIGINT` / `SIGTERM` close the HTTP server and the SQLite connection.
-- Root `README.md`, `database/README.md` and English `PROJECT-CONTEXT.md`.
+- **API** (Express 5, ES Modules, SQLite via `better-sqlite3`): `GET /health`, `POST /api/v1/auth/login`,
+  and the 5 `/api/v1/projects` endpoints (list, get by id, create, PUT, delete) with every status code
+  required by the professor (200/201/204/400/401/404/409/500).
+- **Layers:** routes → `authenticate` → `validate` (Zod) → controller → service → repository; objects wired
+  in one composition root (`server/src/routes/index.js`); single error envelope via `errorHandler`.
+- **Database:** migration `001_create_projects.sql`, deterministic dev seed (5 projects), edge-case seed,
+  scripts `db:reset`, `db:reset -- --empty`, `db:seed:edge`, `db:break`.
+- **QA (Bruno):** collection in `api-tests/` (`main`, `edge`, `empty-state`, `server-error`) covering the
+  24 required cases: 61 requests, 196 assertions, two full passes green (see `docs/qa/bug-log.md`).
+- **Documentation:** `docs/openapi.yaml` served by Swagger UI at `/api-docs`; 5 Mermaid diagrams in
+  `docs/diagrams/` and the README; `docs/qa/test-plan.md` and `bug-log.md`; study guides in `docs/study/`.
 
 ## What does not exist yet
 
-- `POST /api/v1/auth/login` and the `authenticate` middleware (M1).
-- `/api/v1/projects` CRUD, Zod schemas, repositories, services and controllers (M2 / M3).
-- Bruno collection and Playwright tests (M4).
-- OpenAPI YAML, Swagger UI and diagrams (M5).
-- React admin console and public site (M6, gated after G3).
-- CI/CD and deployment (out of MVP scope).
+- CI pipeline (`.github/workflows/` only contains `.gitkeep`).
+- Playwright tests (`e2e/` does not exist); automation is Bruno only.
+- Frontend: `client/` is only a React + Vite scaffold (design tokens and a starter `App.jsx`).
+- Reader role / 403, users table, PATCH, deployment (all post-MVP).
 
-## Verification evidence (M0)
+## Latest verification (2026-11-23, manual)
 
-| Criterion | Result |
+After `npm run db:reset` (5 rows) and `npm start`:
+
+| Check | Result |
 |---|---|
-| A1 missing `JWT_SECRET` | Clear error message, exit code 1 |
-| A2 `db:reset` twice in a row | `Applied migration...` + `Loaded dev data: 5 rows` both times |
-| A3 `db:reset -- --empty` | 0 rows; then `db:seed:edge` leaves 5 edge rows |
-| A4 duplicate slug insert | `SQLITE_CONSTRAINT_UNIQUE` |
-| A5 `GET /health` | 200 `{"status":"ok"}` |
-| A6 `GET /nope` | 404 `ROUTE_NOT_FOUND` envelope |
-| A7 broken JSON body | 400 `INVALID_JSON` envelope |
-| A8 body larger than 100 kb | 400 `PAYLOAD_TOO_LARGE` envelope |
-| `db:break` + `db:reset` | Table dropped, then repaired with 5 seed rows |
-| Edge lengths | Title 150, description 5000, slug 100 characters |
+| `GET /health` | 200 |
+| `GET /api-docs/` | 200 |
+| Login with `.env` credentials | 200, token returned |
+| `GET /api/v1/projects` without token | 401 |
+| `GET /api/v1/projects` with token | 200, `meta.total` = 5 |
+| `GET /api/v1/projects/xyz` with token | 400 |
+| `GET /api/v1/projects/<unknown uuid>` with token | 404 |
+
+The Bruno suite was not re-run on this date.
 
 ## Known constraints and risks
 
-- **Node version:** verified on Node **20.20.2**. `better-sqlite3` is pinned to `^11.10.0` because
-  v13 requires Node ≥22 and the machine has no Windows C++ SDK for a local build.
-- **Professor confirmation:** Node.js + SQLite instead of Java + MySQL is still unconfirmed, as is
-  the final presentation date and how requirement 10 is graded.
-- **Local environment:** `server/.env` exists locally and is git-ignored. A fresh clone must copy
-  `server/.env.example` to `server/.env` and replace the placeholders.
-- **Tests:** the 24-case QA matrix has not been executed yet; the test plan is ready, the suite
-  belongs to M4.
-- **Frontend:** not started and must not start before Gate G3.
+- **Node version:** verified on Node **20.20.2**. `better-sqlite3` is pinned to `^11.10.0` because v13
+  requires Node ≥22 (ENV-03 in the bug log).
+- **Local environment:** `server/.env` is git-ignored. A fresh clone must copy `server/.env.example`
+  to `server/.env` and replace the placeholders.
+- **Test data lifecycle:** after `db:break` the API answers 500 until `npm run db:reset` is run with the
+  server stopped (ENV-02).
+- **Professor confirmation:** Node.js + SQLite instead of Java + MySQL, the presentation date and how
+  requirement 10 is graded remain unconfirmed in `docs/context/professor-requirements.md`.
 
 ## Next actions
 
-1. Developer reviews the M0 diff and ticks **G0** in `docs/plan/roadmap.md` if it passes.
-2. After G0, implement **M1 Auth** (`POST /api/v1/auth/login`, JWT, `authenticate`).
-3. Then **M2 Projects read** and **M3 Projects write**.
-4. Keep `docs/context/api-contract.md`, `docs/qa/test-plan.md` and the OpenAPI file in sync as
-   behavior changes.
-5. Ask the professor the open questions listed in `PROJECT-CONTEXT.md` and the roadmap.
+1. Study and rehearse the presentation (stack, layers, flow of a POST, status codes, Swagger, Bruno, DBeaver).
+2. Optional QA extra: a CI pipeline that runs the Bruno suite and fails the build on a failed test.
+3. Optional, only if time remains: minimal frontend (M6), always after G3 and never at the cost of the MVP.
 
 ## Key links
 
-- `PROJECT-CONTEXT.md` — full project context and fixed stack.
-- `docs/plan/roadmap.md` — living phases, gates and module status.
-- `docs/specs/M0-foundation.md` — M0 scope and acceptance criteria.
+- `PROJECT-CONTEXT.md` — project context and fixed stack.
+- `docs/plan/roadmap.md` — phases, gates and module status.
 - `docs/context/api-contract.md` — endpoint and status-code contract.
 - `docs/context/database-structure.md` — schema, seeds and edge data.
 - `docs/qa/test-plan.md` — 24-case QA matrix and run order.
+- `docs/openapi.yaml` — OpenAPI 3.0.3 specification.
