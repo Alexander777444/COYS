@@ -10,10 +10,12 @@ import { ProjectService } from '../services/ProjectService.js';
 import { ProjectController } from '../controllers/ProjectController.js';
 import { createAuthenticate } from '../middlewares/authenticate.js';
 
+// Build each layer here and give it the parts that it needs.
 export function createApiRouter({ db, config }) {
   const router = Router();
 
   const authenticate = createAuthenticate(config);
+  // Each object gets the next layer as its input.
   const authController = new AuthController(new AuthService(config));
   const projectController = new ProjectController(new ProjectService(new ProjectRepository(db)));
 

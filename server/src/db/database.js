@@ -12,6 +12,7 @@ const databasePath = resolve(DATABASE_PATH);
 mkdirSync(dirname(databasePath), { recursive: true });
 
 const db = new Database(databasePath);
+// Enable SQLite checks for foreign keys.
 db.pragma('foreign_keys = ON');
 
 export default db;

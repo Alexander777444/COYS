@@ -3,12 +3,14 @@
 
 import { AppError } from '../errors/AppError.js';
 
+// Send errors as JSON, with a safe message for unexpected errors.
 export function errorHandler(err, _req, res, next) {
   if (res.headersSent) {
     return next(err);
   }
 
   if (err instanceof AppError) {
+    // For a 401 error, ask the client to send a Bearer token.
     if (err.statusCode === 401) {
       res.set('WWW-Authenticate', 'Bearer');
     }

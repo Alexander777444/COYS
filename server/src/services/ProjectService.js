@@ -10,6 +10,7 @@ export class ProjectService {
     this.#repository = repository;
   }
 
+  // Get the rows and total count for one page.
   async list({ status, limit, offset }) {
     const { rows, total } = await this.#repository.findAll({ status, limit, offset });
     return { data: rows, meta: { total, limit, offset } };
@@ -24,11 +25,13 @@ export class ProjectService {
     return project;
   }
 
+  // Make a new id before the repository saves the project.
   async create(data) {
     // Ids are generated here, not in the repository or by the client.
     return this.#repository.create({ id: randomUUID(), ...data });
   }
 
+  // Replace the project fields, or report that the id was not found.
   async replace(id, data) {
     const project = await this.#repository.replace(id, data);
 
@@ -37,6 +40,7 @@ export class ProjectService {
     return project;
   }
 
+  // Delete the project, or report that the id was not found.
   async remove(id) {
     const deleted = await this.#repository.deleteById(id);
 

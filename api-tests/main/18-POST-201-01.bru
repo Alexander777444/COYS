@@ -1,3 +1,4 @@
+// This test makes a project for the later PUT and DELETE tests.
 meta {
   name: POST-201-01 create a project with every optional field
   type: http
@@ -28,6 +29,7 @@ body:json {
 }
 
 script:post-response {
+  // Save the new id and time values for later tests.
   bru.setVar("putId", res.body.id);
   bru.setVar("putCreatedAt", res.body.createdAt);
   test("timestamps start equal", function () {

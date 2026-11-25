@@ -8,6 +8,7 @@ import {
   projectIdParamsSchema,
 } from '../models/project.schemas.js';
 
+// This function sets the URL, checks, and handler for each project action.
 export function createProjectRoutes(controller, authenticate) {
   const router = Router();
 

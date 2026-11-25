@@ -29,6 +29,7 @@ export class ProjectRepository {
     return { rows: rows.map(toProject), total };
   }
 
+  // Find one row by id; null means that it is not in the table.
   async findById(id) {
     const row = this.#db.prepare(`${SELECT_ALL} WHERE id = ?`).get(id);
     return row ? toProject(row) : null;
@@ -93,6 +94,7 @@ export class ProjectRepository {
     return this.findById(id);
   }
 
+  // Delete by id and tell the service if a row was removed.
   async deleteById(id) {
     const { changes } = this.#db.prepare('DELETE FROM projects WHERE id = ?').run(id);
     return changes > 0;
