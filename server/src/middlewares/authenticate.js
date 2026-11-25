@@ -6,6 +6,7 @@ import { UnauthorizedError } from '../errors/UnauthorizedError.js';
 // "Bearer" is case-insensitive per the HTTP spec; the token itself must not contain spaces.
 const BEARER_PATTERN = /^Bearer\s+(\S+)$/i;
 
+// Check the token before a route that needs a login.
 export function createAuthenticate(config) {
   return (req, _res, next) => {
     const header = req.get('authorization');

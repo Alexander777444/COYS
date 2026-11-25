@@ -11,6 +11,7 @@ export class AuthService {
     this.#config = config;
   }
 
+  // Check the login details, then return a signed token.
   async login(username, password) {
     // Both values are checked before failing, so the response time does not reveal
     // which one was wrong; the error message is identical in both cases.
@@ -21,6 +22,7 @@ export class AuthService {
       throw new UnauthorizedError('INVALID_CREDENTIALS', 'Invalid username or password');
     }
 
+    // The token names the user and has a set time limit.
     const token = jwt.sign({ sub: username }, this.#config.jwtSecret, {
       algorithm: 'HS256',
       expiresIn: this.#config.jwtExpiresIn,

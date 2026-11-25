@@ -1,3 +1,4 @@
+// This test logs in and saves the token for other tests.
 meta {
   name: 00-login obtain a token for the rest of the run
   type: http
@@ -18,6 +19,7 @@ body:json {
 }
 
 script:post-response {
+  // Keep the token so later requests can use it.
   bru.setVar("token", res.body.token);
 }
 

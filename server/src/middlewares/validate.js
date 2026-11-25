@@ -6,6 +6,7 @@ import { ValidationError } from '../errors/ValidationError.js';
 const PARTS = ['params', 'query', 'body'];
 
 // Zod reports issues with a path array; the API contract exposes { path, message } strings.
+// Turn each Zod issue into the small format used by the API.
 function toDetails(error) {
   return error.issues.map((issue) => ({
     path: issue.path.join('.'),
@@ -13,6 +14,7 @@ function toDetails(error) {
   }));
 }
 
+// Make middleware that checks the request parts named by the route.
 export function validate(schemas) {
   return (req, _res, next) => {
     const validated = {};

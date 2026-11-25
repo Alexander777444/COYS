@@ -2,8 +2,10 @@
 // Rules come only from docs/context/api-contract.md.
 import { z } from 'zod';
 
+// These are the only project status values allowed by the API.
 export const PROJECT_STATUSES = ['DRAFT', 'PUBLISHED', 'ARCHIVED'];
 
+// Check that the URL id is a valid UUID.
 export const projectIdParamsSchema = z.object({
   id: z.uuid('id must be a valid UUID'),
 });
@@ -17,6 +19,7 @@ export const listProjectsQuerySchema = z.object({
 
 const httpUrl = z.url({ protocol: /^https?$/ }).max(2048);
 
+// Check the fields sent when a client creates or replaces a project.
 // POST and PUT share this shape: PUT is a full replacement, so the same required fields
 // apply and omitted optional fields fall back to their defaults. Strict → unknown
 // fields (id, createdAt, …) are a 400 instead of being silently ignored.

@@ -2,6 +2,7 @@
 // The global handler can trust statusCode/code/details instead of guessing what went wrong.
 
 export class AppError extends Error {
+  // Save the HTTP status and error details for the global handler.
   constructor(statusCode, code, message, details = null) {
     super(message);
     this.name = new.target.name;

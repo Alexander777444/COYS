@@ -27,10 +27,12 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '100kb' }));
 
+// This public URL shows that the server is running.
 app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
+// Add all API routes under the versioned URL.
 app.use('/api/v1', createApiRouter({ db, config }));
 
 app.use(notFound);

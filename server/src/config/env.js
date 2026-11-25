@@ -5,6 +5,7 @@ import 'dotenv/config';
 
 const REQUIRED_VARIABLES = ['DATABASE_PATH', 'JWT_SECRET', 'API_USERNAME', 'API_PASSWORD'];
 
+// Stop startup when a required setting is missing or blank.
 function readRequired(name) {
   const value = process.env[name];
 
@@ -18,6 +19,7 @@ function readRequired(name) {
   return value.trim();
 }
 
+// Use port 3000 when PORT is not set, and check its range.
 const PORT = Number(process.env.PORT ?? 3000);
 if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
   throw new Error('PORT must be an integer between 1 and 65535.');
@@ -25,6 +27,7 @@ if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
 
 const DATABASE_PATH = readRequired('DATABASE_PATH');
 
+// A long key is needed to sign secure login tokens.
 const JWT_SECRET = readRequired('JWT_SECRET');
 if (JWT_SECRET.length < 32) {
   throw new Error(
