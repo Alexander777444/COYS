@@ -1,6 +1,6 @@
 // HTTP layer for project reads: validated input in, JSON out. One service call per handler.
 export class ProjectController {
-  #service;
+  #service; // The service is the only dependency of the controller.
 
   constructor(service) {
     this.#service = service;

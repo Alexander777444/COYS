@@ -5,7 +5,7 @@ import { PORT } from './config/env.js';
 
 // Start the app on the configured port.
 const server = app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+  console.log(`Server listening on port ${PORT} try with http://localhost:${PORT}/health and http://localhost:${PORT}/api-docs`);
 });
 
 // Close both the web server and database before the process ends.

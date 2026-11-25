@@ -3,7 +3,9 @@
 
 import 'dotenv/config';
 
-const REQUIRED_VARIABLES = ['DATABASE_PATH', 'JWT_SECRET', 'API_USERNAME', 'API_PASSWORD'];
+// Check that all required variables are present. DATEBASE_PATH is used by the database layer, 
+// JWT_SECRET by the AuthService, and API_USERNAME/API_PASSWORD by the login route.
+const REQUIRED_VARIABLES = ['DATABASE_PATH', 'JWT_SECRET', 'API_USERNAME', 'API_PASSWORD']; 
 
 // Stop startup when a required setting is missing or blank.
 function readRequired(name) {

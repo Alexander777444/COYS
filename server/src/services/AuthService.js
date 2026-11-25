@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import { UnauthorizedError } from '../errors/UnauthorizedError.js';
 
 export class AuthService {
-  #config;
+  #config;// Private field for the configuration object.
 
   constructor(config) {
     this.#config = config;
@@ -35,7 +35,7 @@ export class AuthService {
 // Hashing both sides first gives two buffers of the same length, so timingSafeEqual
 // never throws on different lengths and the comparison leaks no timing information.
 function safeEqual(received, expected) {
-  const receivedDigest = createHash('sha256').update(String(received)).digest();
+  const receivedDigest = createHash('sha256').update(String(received)).digest(); // The hash is a fixed-length buffer, so timingSafeEqual can be used safely.
   const expectedDigest = createHash('sha256').update(String(expected)).digest();
   return timingSafeEqual(receivedDigest, expectedDigest);
 }
